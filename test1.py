@@ -153,11 +153,22 @@ class SASParser:
                 j = i
                 while j < len(code) and (code[j].isalnum() or code[j] == '_' or code[j] == '.'):
                     j += 1
+                
+                # Check for scientific notation: if ends with E and next char is +/- followed by digits
+                if j < len(code) and code[j-1:j].upper() == 'E' and code[j] in '+-':
+                    # Include the sign
+                    j += 1
+                    # Include the exponent digits
+                    while j < len(code) and code[j].isdigit():
+                        j += 1
+                
                 value = code[i:j]
                 
-                # Check if it's a number
+                # Check if it's a number (including scientific notation)
                 try:
                     float(value)
+                    # Keep scientific notation with lowercase 'e'
+                    value = value.replace('E', 'e')
                     tokens.append(('NUMBER', value))
                 except ValueError:
                     tokens.append(('IDENT', value))
@@ -634,39 +645,7 @@ def test_converter():
     """
     # Sample with 2 separate IF-ELSE trees (simulating multiple scorecard components)
     sample_sas = """
-    IF (f26<1.5 OR f26 = .) THEN DO;
-        IF (f8<0.5 OR f8 = .) THEN DO;
-            sum_score = sum_score + (-0.141490221);
-        END;
-        ELSE DO;
-            sum_score = sum_score + (-0.1768962);
-        END;
-    END;
-    ELSE DO;
-        IF (f88<3.5 OR f88 = .) THEN DO;
-            sum_score = sum_score + (0.0328746177);
-        END;
-        ELSE DO;
-            sum_score = sum_score + (-0.0433662049);
-        END;
-    END;
     
-    IF (f100<5 OR f100 = .) THEN DO;
-        IF (f200<10 OR f200 = .) THEN DO;
-            sum_score = sum_score + (0.123);
-        END;
-        ELSE DO;
-            sum_score = sum_score + (-0.456);
-        END;
-    END;
-    ELSE DO;
-        IF (f300<15.5 OR f300 = .) THEN DO;
-            sum_score = sum_score + (0.789);
-        END;
-        ELSE DO;
-            sum_score = sum_score + (-0.012);
-        END;
-    END;
     """
     
     print("🧪 Testing converter with multiple trees...\n")
